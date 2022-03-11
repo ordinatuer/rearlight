@@ -15,10 +15,14 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN, NEO_GRB + NEO_KH
 int iStart = 0;
 // направление пробега
 int iDirect = 1;
+bool colorDirect = true;
 // задержка главного цикла (loop())
-int delayMs = 20;
+int delayMs = 30;
 // момент последнего срабатывания программы
 unsigned long previosMs = 0;
+
+int color[] = {255, 0, 0};
+int colorStep = 20;
 
  
 void setup()
@@ -41,31 +45,50 @@ void loop()
   if (delayMs < (currentMs - previosMs)) {
     previosMs = currentMs;
 
-    rgbSwitch();
+    runningLigth();
   }
 }
 
-void rgbSwitch() {
-    if (LED_COUNT == iStart) {
+void runningLigth() {
+  if (LED_COUNT == iStart) {
     iDirect = 0;
   }
   if (0 == iStart) {
     iDirect = 1;
   }
+
+  bool oldColorDirect = colorDirect;
   
-  if (1 == iDirect) {
-    iStart++;  
-  } else {
-    iStart--;  
+  if (255 <= color[0]) {
+    colorDirect = false;
   }
-  
+  if (0 >= color[0]) {
+    colorDirect = true;
+  }
+
+  if (colorDirect) {
+    color[0] = color[0] + colorStep;
+    color[1] = color[1] - colorStep;
+  } else {
+    color[0] = color[0] - colorStep;
+    color[1] = color[1] + colorStep;
+  }
+
+  if ((oldColorDirect != colorDirect) && !colorDirect) {
+    if (1 == iDirect) {
+      iStart++;  
+    } else {
+      iStart--;  
+    }
+  }
+
   // Перебираем все светодиоды.
   for (int i = 0; i < LED_COUNT; i++)
   { 
-    //if (i == iStart || i == (LED_COUNT - iStart)) {
-    if (i == iStart) {
+    if (i == iStart || i == (LED_COUNT - iStart)) {
+    //if (i == iStart) {
       // бегущий диод
-      strip.setPixelColor(i, strip.Color(250, 0, 100));
+      strip.setPixelColor(i, strip.Color(toColorInt(color[0]), toColorInt(color[1]), 0));
     } else {
       // остальные, фоновые диоды
       strip.setPixelColor(i, strip.Color(250, 0, 0));
@@ -74,7 +97,16 @@ void rgbSwitch() {
   
   // Передаем цвета ленте.
   strip.show();
-  
-  // Ждем (мс).
-  //delay(delayMs);
+}
+
+int toColorInt(int num) {
+  if (255 < num) {
+    num = 255;
+  }
+
+  if (num < 0) {
+    num = 0;
+  }
+
+  return num;
 }
